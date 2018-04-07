@@ -35,7 +35,7 @@ def voice_handler(bot, update):
         data.download(custom_path=custom_path)
         result = process_speech(custom_path)
     user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
-    update.message.reply_text('{} speech from {}: {}'.format(result.sentiment, user, result.text))
+    update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
 
 
 def error(bot, update, error):

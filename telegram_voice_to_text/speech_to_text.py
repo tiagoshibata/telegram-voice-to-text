@@ -5,6 +5,7 @@ from pathlib import Path
 from google.cloud import language
 from google.cloud.language import enums
 from google.cloud.language import types
+from google.api_core.exceptions import InvalidArgument
 # import soundfile as sf
 import scipy.io.wavfile
 
@@ -12,6 +13,7 @@ from telegram_voice_to_text.config import project_root
 
 sys.path.append(str(project_root() / 'deps/Vokaturi/api'))
 import Vokaturi
+Vokaturi.load(str(project_root() / 'deps/Vokaturi/OpenVokaturi-3-0-linux64.so'))
 
 
 def process_speech_text(speech_raw, sample_rate):
@@ -21,7 +23,7 @@ def process_speech_text(speech_raw, sample_rate):
 
     client = speech.SpeechClient()
 
-    audio = types.RecognitionAudio(content=speech_raw)
+    audio = types.RecognitionAudio(content=speech_raw.tobytes())
 
     config = types.RecognitionConfig(
         encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
@@ -42,7 +44,6 @@ def process_speech_text(speech_raw, sample_rate):
 
     return text
 
-Vokaturi.load(str(project_root() / 'deps/Vokaturi/OpenVokaturi-3-0-linux64.so'))
 
 
 def classify(text, verbose=True):
@@ -53,7 +54,11 @@ def classify(text, verbose=True):
     document = language.types.Document(
         content=text,
         type=language.enums.Document.Type.PLAIN_TEXT)
-    response = language_client.classify_text(document)
+    try:
+        response = language_client.classify_text(document)
+    except InvalidArgument as e:
+        print(e)
+        return
     categories = response.categories
 
     result = {}
@@ -88,13 +93,13 @@ def binary_sentiment(text, verbose=True):
 
     return sentiment.score
 
-SpeechResults = namedtuple('SpeechResults', ['text', 'sentiment', 'category'])
+SpeechResults = namedtuple('SpeechResults', ['text', 'audio_sentiment', 'categories', 'text_sentiment'])
 
 
 def process_text(text):
     bin_score = binary_sentiment(text)
-    cat_dict = classify(text)
-    return bin_score, cat_dict
+    categories_dict = classify(text)
+    return bin_score, categories_dict
 
 
 def read_speech(path):
@@ -142,7 +147,11 @@ def get_sentiment(sample_rate, samples):
 
 def process_speech(speech_file):
     sample_rate, samples = read_speech(speech_file)
-
     text = process_speech_text(samples, sample_rate)
-
-    return SpeechResults(text=text, sentiment=get_sentiment(sample_rate, samples))
+    text_sentiment, text_categories = process_text(text)
+    return SpeechResults(
+        text=text,
+        audio_sentiment=get_sentiment(sample_rate, samples),
+        categories=text_categories,
+        text_sentiment=text_sentiment,
+    )

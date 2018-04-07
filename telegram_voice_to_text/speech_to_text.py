@@ -1,10 +1,4 @@
 from collections import namedtuple
-import argparse
-import io
-import json
-import os
-import numpy
-import six
 import sys
 from pathlib import Path
 
@@ -13,10 +7,11 @@ from google.cloud.language import enums
 from google.cloud.language import types
 # import soundfile as sf
 import scipy.io.wavfile
-sys.path.append(str(project_root() / 'deps/Vokaturi/api'))
-import Vokaturi
 
 from telegram_voice_to_text.config import project_root
+
+sys.path.append(str(project_root() / 'deps/Vokaturi/api'))
+import Vokaturi
 
 
 def process_speech_text(speech_raw, sample_rate):

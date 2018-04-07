@@ -1,7 +1,3 @@
-from google.cloud import language
-from google.cloud.language import enums
-from google.cloud.language import types
-
 from collections import namedtuple
 import argparse
 import io
@@ -11,12 +7,18 @@ import numpy
 import six
 import sys
 from pathlib import Path
+
+from google.cloud import language
+from google.cloud.language import enums
+from google.cloud.language import types
 # import soundfile as sf
 import scipy.io.wavfile
-from telegram_voice_to_text.config import project_root
-
 sys.path.append(str(project_root() / 'deps/Vokaturi/api'))
 import Vokaturi
+
+from telegram_voice_to_text.config import project_root
+
+Vokaturi.load(str(project_root() / 'deps/Vokaturi/OpenVokaturi-3-0-linux64.so'))
 
 
 def classify(text, verbose=True):
@@ -46,6 +48,7 @@ def classify(text, verbose=True):
         print(result)
     return result
 
+
 def binary_sentiment(text, verbose=True):
     client = language.LanguageServiceClient()
     # The text to analyze
@@ -63,17 +66,16 @@ def binary_sentiment(text, verbose=True):
 
 SpeechResults = namedtuple('SpeechResults', ['text', 'sentiment', 'category'])
 
+
 def process_text(text):
     bin_score = binary_sentiment(text)
     cat_dict = classify(text)
     return bin_score, cat_dict
 
+
 def process_speech(speech):
     rate, data = load_path(speech)
-
-
     return SpeechResults(text='TODO text', sentiment='Happy', category=cat_dict)
-Vokaturi.load(str(project_root() / 'deps/Vokaturi/OpenVokaturi-3-0-linux64.so'))
 
 
 def read_speech(path):
@@ -84,8 +86,7 @@ def read_speech(path):
     return scipy.io.wavfile.read(output)
 
 
-def get_sentiment(speech_file):
-    sample_rate, samples = read_speech(speech_file)
+def get_sentiment(sample_rate, samples):
     print('Sample rate %.3f Hz' % sample_rate)
 
     print('Allocating Vokaturi sample array...')
@@ -100,11 +101,7 @@ def get_sentiment(speech_file):
     print('Creating VokaturiVoice...')
     try:
         voice = Vokaturi.Voice (sample_rate, buffer_length)
-
-        print('Filling VokaturiVoice with samples...')
         voice.fill(buffer_length, c_buffer)
-
-        print('Extracting emotions from VokaturiVoice...')
         quality = Vokaturi.Quality()
         emotionProbabilities = Vokaturi.EmotionProbabilities()
         voice.extract(quality, emotionProbabilities)
@@ -120,10 +117,12 @@ def get_sentiment(speech_file):
             sentiments['happy'] = emotionProbabilities.happiness
             sentiments['sad'] = emotionProbabilities.sadness
             sentiments['angry'] = emotionProbabilities.anger
-            sentiments['fear'] = emotionProbabilities.fear
+            sentiments['fearful'] = emotionProbabilities.fear
             return max(sentiments, key=lambda x: sentiments[x]).title()
     finally:
         voice.destroy()
 
+
 def process_speech(speech_file):
-    return SpeechResults(text='TODO text', sentiment=get_sentiment(speech_file))
+    sample_rate, samples = read_speech(speech_file)
+    return SpeechResults(text='TODO text', sentiment=get_sentiment(sample_rate, samples))

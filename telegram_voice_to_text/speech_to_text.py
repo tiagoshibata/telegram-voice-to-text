@@ -121,7 +121,7 @@ def get_sentiment(speech_file):
             sentiments['sad'] = emotionProbabilities.sadness
             sentiments['angry'] = emotionProbabilities.anger
             sentiments['fear'] = emotionProbabilities.fear
-            return max(sentiments, key=lambda x: sentiments[x])
+            return max(sentiments, key=lambda x: sentiments[x]).title()
     finally:
         voice.destroy()
 

@@ -5,7 +5,7 @@ from speech_to_text import process_text
 
 
 def photo_analysis(bot, update):
-    print update.message.document
+    print(update.message.document)
     file = update.message.document.get_file(timeout=120)
 
     response = requests.get(file['file_path'], stream=True)

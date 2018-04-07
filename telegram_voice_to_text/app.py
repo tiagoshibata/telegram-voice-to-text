@@ -26,6 +26,8 @@ def help(bot, update):
 
 
 def command_handler(bot, update):
+    if update.message.text.startswith('/language'):
+        pass
     update.message.reply_text('TODO commands')
 
 

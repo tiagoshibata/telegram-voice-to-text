@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import logging
+from pathlib import Path
+import sys
+import tempfile
 
 import telegram_voice_to_text.config as config
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 from telegram_voice_to_text.speech_to_text import process_speech
-
-logger = logging.getLogger(__name__)
 
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -28,13 +29,17 @@ def voice_handler(bot, update):
     if from_user and from_user['is_bot']:
         return
     data = update.message.voice.get_file()
+    print(data.file_path)
+    with tempfile.TemporaryDirectory() as directory:
+        custom_path = Path(directory, data.file_path.rsplit('/', 1)[-1])
+        data.download(custom_path=custom_path)
+        result = process_speech(custom_path)
     user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
-    result = process_speech(data)
     update.message.reply_text('{} speech from {}: {}'.format(result.sentiment, user, result.text))
 
 
 def error(bot, update, error):
-    logger.warning('Update "%s": error "%s"', update, error)
+    logging.warning('Update "%s": error "%s"', update, error)
 
 
 def main():

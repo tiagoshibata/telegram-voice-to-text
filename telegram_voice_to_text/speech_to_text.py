@@ -1,4 +1,14 @@
+from google.cloud import language
+from google.cloud.language import enums
+from google.cloud.language import types
+from google.api_core.exceptions import InvalidArgument
+import scipy.io.wavfile
 
+lang = 'en-US'
+
+
+def switch_language(language):
+    global lang
     if language == 'english':
         lang = 'en-US'
         switch_code = 'Now language is english'
@@ -45,7 +55,8 @@ def classify(text, verbose=True):
 
     document = language.types.Document(
         content=text,
-        type=language.enums.Document.Type.PLAIN_TEXT)
+        type=language.enums.Document.Type.PLAIN_TEXT,
+        lang=lang)
     try:
         response = language_client.classify_text(document)
     except InvalidArgument as e:
@@ -75,7 +86,8 @@ def binary_sentiment(text, verbose=True):
     # The text to analyze
     document = types.Document(
         content=text,
-        type=enums.Document.Type.PLAIN_TEXT)
+        type=enums.Document.Type.PLAIN_TEXT,
+        lang=lang)
 
     # Detects the sentiment of the text
     sentiment = client.analyze_sentiment(document=document).document_sentiment
@@ -98,7 +110,6 @@ def read_speech(path):
     import subprocess
     output = Path(path).resolve().parent / 'file.wav'
     subprocess.check_call(['sox', '|opusdec --force-wav {} -'.format(path), str(output)])
-    # samples, sample_rate = sf.read(speech_file)
     return scipy.io.wavfile.read(output)
 
 
@@ -149,14 +160,6 @@ def process_speech(speech_file):
         text_sentiment=text_sentiment,
     )
 
-    if language == 'english':
-        lang = 'en-US'
-        switch_code = 'Now language is english'
-    elif language == 'portugues':
-        lang = 'pt-BT'
-        switch_code = 'Agora a o bot está em português'
-    return switch_code
-
 
 def process_speech_text(speech_raw, sample_rate):
     from google.cloud import speech
@@ -248,7 +251,6 @@ def read_speech(path):
     import subprocess
     output = Path(path).resolve().parent / 'file.wav'
     subprocess.check_call(['sox', '|opusdec --force-wav {} -'.format(path), str(output)])
-    # samples, sample_rate = sf.read(speech_file)
     return scipy.io.wavfile.read(output)
 
 

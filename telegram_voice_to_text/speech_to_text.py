@@ -73,11 +73,6 @@ def process_text(text):
     return bin_score, cat_dict
 
 
-def process_speech(speech):
-    rate, data = load_path(speech)
-    return SpeechResults(text='TODO text', sentiment='Happy', category=cat_dict)
-
-
 def read_speech(path):
     import subprocess
     output = Path(path).resolve().parent / 'file.wav'
@@ -107,18 +102,16 @@ def get_sentiment(sample_rate, samples):
         voice.extract(quality, emotionProbabilities)
 
         if quality.valid:
-            print('Neutral: %.3f' % emotionProbabilities.neutrality)
-            print('Happy: %.3f' % emotionProbabilities.happiness)
-            print('Sad: %.3f' % emotionProbabilities.sadness)
-            print('Angry: %.3f' % emotionProbabilities.anger)
-            print('Fear: %.3f' % emotionProbabilities.fear)
-            sentiments = {}
-            sentiments['neutral'] = emotionProbabilities.neutrality
-            sentiments['happy'] = emotionProbabilities.happiness
-            sentiments['sad'] = emotionProbabilities.sadness
-            sentiments['angry'] = emotionProbabilities.anger
-            sentiments['fearful'] = emotionProbabilities.fear
-            return max(sentiments, key=lambda x: sentiments[x]).title()
+            sentiments = {
+                'neutral': emotionProbabilities.neutrality,
+                'happy': emotionProbabilities.happiness,
+                'sad': emotionProbabilities.sadness,
+                'angry': emotionProbabilities.anger,
+                'fearful': emotionProbabilities.fear,
+            }
+            print('Sentiments: {}'.format(sentiments))
+            sentiment = max(sentiments, key=lambda x: sentiments[x])
+            return sentiment, sentiments[sentiment]
     finally:
         voice.destroy()
 

@@ -40,7 +40,7 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=['python-telegram-bot'],
+    install_requires=['python-telegram-bot', 'google-cloud'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,

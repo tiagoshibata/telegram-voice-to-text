@@ -148,6 +148,7 @@ def get_sentiment(sample_rate, samples):
 def process_speech(speech_file):
     sample_rate, samples = read_speech(speech_file)
     text = process_speech_text(samples, sample_rate)
+    text = preprocess_text(text)
     text_sentiment, text_categories = process_text(text)
     return SpeechResults(
         text=text,
@@ -155,3 +156,12 @@ def process_speech(speech_file):
         categories=text_categories,
         text_sentiment=text_sentiment,
     )
+
+def preprocess_text(raw_text):
+    words = len(raw_text.split(sep=' '))
+    if words < 10:
+         return raw_text
+    elif words < 20:
+        extended_text = raw_text + ' ' + raw_text
+        return extended_text
+    else: return raw_text

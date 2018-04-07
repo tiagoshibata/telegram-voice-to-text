@@ -15,6 +15,21 @@ sys.path.append(str(project_root() / 'deps/Vokaturi/api'))
 import Vokaturi
 Vokaturi.load(str(project_root() / 'deps/Vokaturi/OpenVokaturi-3-0-linux64.so'))
 
+lang = 'en-US'
+
+
+def switch_language(language):
+    global lang
+    switch_code = 'Unable to change language'
+
+    if language == 'english':
+        lang = 'en-US'
+        switch_code = 'Now language is english'
+    elif language == 'portugues':
+        lang = 'pt-BT'
+        switch_code = 'Agora a o bot está em português'
+    return switch_code
+
 
 def process_speech_text(speech_raw, sample_rate):
     from google.cloud import speech
@@ -28,7 +43,7 @@ def process_speech_text(speech_raw, sample_rate):
     config = types.RecognitionConfig(
         encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=sample_rate,
-        language_code='en-US')
+        language_code=lang)
 
     # Detects speech in the audio file
     response = client.recognize(config, audio)

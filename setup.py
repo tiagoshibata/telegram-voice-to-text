@@ -8,7 +8,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.rst')) as f:
 
 TESTS_REQUIRE = ['pylint', 'pytest', 'pytest-pylint']
 setup(
-    name='telegram-voice-to-text',
+    name='telegram_voice_to_text',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see

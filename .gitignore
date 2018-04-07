@@ -11,3 +11,7 @@ __pycache__/
 /.eggs/
 /.vscode/
 /venv/
+
+\.idea/
+
+telegram_voice_to_text/audio\.raw

@@ -1,4 +1,6 @@
 certifi==2018.1.18
 future==0.16.0
 python-telegram-bot==10.0.1
+pytesseract
+requests
 -e git+git@github.com:tiagoshibata/telegram-voice-to-text.git@dd04dba8e8d21b67465199c51c41cea1f0d4f595#egg=telegram_voice_to_text

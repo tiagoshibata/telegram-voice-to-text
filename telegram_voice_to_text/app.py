@@ -105,10 +105,8 @@ def text_handler(bot, update):
         emotion_filter = False
         update.effective_user.send_message(text="Emotion filter OFF!")
 
-def photo_handler(bot, update):
-    file = update.message.document.get_file(timeout=120)
-
-    response = requests.get(file['file_path'], stream=True)
+def photo_analysis(bot, update, file_url):
+    response = requests.get(file_url, stream=True)
     response.raise_for_status()
 
     with open('output.jpg', 'wb') as handle:
@@ -121,7 +119,7 @@ def photo_handler(bot, update):
 
     app = ClarifaiApp(api_key='d8090e6a90104ec0b190f3a975e5b912')
     model = app.models.get("general-v1.3")
-    result = model.predict_by_url(url=file['file_path'])
+    result = model.predict_by_url(url=file_url)
 
     i = 0
     text_result = ""
@@ -131,6 +129,18 @@ def photo_handler(bot, update):
         if i > 5:
             break
     update.message.reply_text(u"Conteúdo da imagem: " + text_result)
+
+
+def photo_handler(bot, update):
+    print (update.message.photo)
+    file = update.message.photo[-1].get_file()
+    photo_analysis(bot, update, file.file_path)
+
+
+def document_handler(bot, update):
+    print (update.message.document)
+    file = update.message.document.get_file(timeout=120)
+    photo_analysis(bot, update, file['file_path'])
 
 
 def error(bot, update, error):
@@ -145,7 +155,8 @@ def main():
     dp.add_handler(MessageHandler(Filters.command, command_handler))
     dp.add_handler(MessageHandler(Filters.voice, voice_handler))
     dp.add_handler(MessageHandler(Filters.text, text_handler))
-    dp.add_handler(MessageHandler(Filters.document, photo_handler))
+    dp.add_handler(MessageHandler(Filters.document, document_handler))
+    dp.add_handler(MessageHandler(Filters.photo, photo_handler))
 
     dp.add_error_handler(error)
 

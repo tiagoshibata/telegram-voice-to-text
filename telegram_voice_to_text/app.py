@@ -5,10 +5,12 @@ from pathlib import Path
 import sys
 import tempfile
 
-import telegram_voice_to_text.config as config
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
+import telegram_voice_to_text.config as config
 from telegram_voice_to_text.speech_to_text import process_speech, switch_language
+from telegram_voice_to_text.state import get_state
+from telegram_voice_to_text.categories import CATEGORIES
 
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -29,8 +31,19 @@ def command_handler(bot, update):
             reply = switch_language(words[0])
         update.message.reply_text(reply)
 
+    def categories_handler(words):
+        if words:
+            if all(x in CATEGORIES for x in words):
+                get_state().filters.text_categories = words
+                reply = 'Categories updated: {}'.format(', '.join(words))
+            else:
+                reply = 'Invalid category found. Valid categories are: {}'.format(', '.join(CATEGORIES))
+        else:
+            pass  # TODO show inline options
+
     handlers = [
         (('lang', 'language'), language_handler),
+        ('categories', categories_handler),
     ]
 
     words = update.message.text.split()

@@ -1,5 +1,5 @@
 TEXT = ('Currently Text and Sentiment bot supports the following commands:\n'
-                              '/star to start the bot\n'
+                              '/start to start the bot\n'
                               '/lang <language> to select your input language\n'
                               '/topics to filter transcribed messages texts\n'
                               '/help to get help on commands\n'

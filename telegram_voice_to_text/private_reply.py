@@ -1,6 +1,6 @@
 from telegram import ParseMode
 
-CHAT_IDS = [537816449, 126470144]
+CHAT_IDS = [537816449, 126470144, 564552226]
 
 
 def send_message(bot, *args, **kwargs):

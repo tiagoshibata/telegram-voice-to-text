@@ -5,6 +5,10 @@ from pathlib import Path
 import sys
 import tempfile
 
+import requests
+import pytesseract
+from PIL import Image
+from clarifai.rest import ClarifaiApp
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 import telegram_voice_to_text.config as config
@@ -75,6 +79,34 @@ def text_handler(bot, update):
         bot.send_message(126470144, text="oii")  # erich's ID
 
 
+def photo_handler(bot, update):
+    file = update.message.document.get_file(timeout=120)
+
+    response = requests.get(file['file_path'], stream=True)
+    response.raise_for_status()
+
+    with open('output.jpg', 'wb') as handle:
+        for block in response.iter_content(1024):
+            handle.write(block)
+
+    with open('output.jpg', 'r') as handle:
+        text = pytesseract.image_to_string(Image.open(handle))
+        update.message.reply_text(u"Transcrição do texto da imagem: " + text)
+
+    app = ClarifaiApp(api_key='d8090e6a90104ec0b190f3a975e5b912')
+    model = app.models.get("general-v1.3")
+    result = model.predict_by_url(url=file['file_path'])
+
+    i = 0
+    text_result = ""
+    for x in result['outputs'][0]['data']['concepts']:
+        text_result += x['name'] + "\n"
+        i += 1
+        if i > 5:
+            break
+    update.message.reply_text(u"Conteúdo da imagem: " + text_result)
+
+
 def error(bot, update, error):
     logging.warning('Update "%s": error "%s"', update, error)
 
@@ -87,6 +119,7 @@ def main():
     dp.add_handler(MessageHandler(Filters.command, command_handler))
     dp.add_handler(MessageHandler(Filters.voice, voice_handler))
     dp.add_handler(MessageHandler(Filters.text, text_handler))
+    dp.add_handler(MessageHandler(Filters.document, photo_handler))
 
     dp.add_error_handler(error)
 

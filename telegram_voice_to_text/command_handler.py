@@ -68,7 +68,7 @@ def command_handler(bot, update):
     for command, handler in handlers:
         if isinstance(command, str):
             command = [command]
-        if words[0].lower()[1:] in command:
+        if words[0].lower()[1:].split('@', 1)[0] in command:
             return handler(words[1:])
     else:
         update.message.reply_text('Unknown command')

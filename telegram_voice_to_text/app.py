@@ -99,7 +99,8 @@ def photo_analysis(bot, update, file_url):
     with open('output.jpg', 'rb') as handle:
         text = pytesseract.image_to_string(Image.open(handle))
         if text:
-            update.message.reply_markdown(bot, '*OCR:* {}'.format(text))
+            print('*OCR:* {}'.format(text))
+            update.message.reply_text(text)
 
     app = ClarifaiApp(api_key='d8090e6a90104ec0b190f3a975e5b912')
     model = app.models.get("general-v1.3")
@@ -108,7 +109,7 @@ def photo_analysis(bot, update, file_url):
     text_result = []
     for x in result['outputs'][0]['data']['concepts'][:5]:
         text_result.append(x['name'])
-    update.message.reply_markdown(bot, '*Image content:* {}'.format(', '.join(text_result)))
+    update.message.reply_markdown('*Image content:* {}'.format(', '.join(text_result)))
 
 
 def photo_handler(bot, update):

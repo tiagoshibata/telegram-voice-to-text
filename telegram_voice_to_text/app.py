@@ -8,6 +8,7 @@ import requests
 import pytesseract
 from PIL import Image
 from clarifai.rest import ClarifaiApp
+from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
 import telegram_voice_to_text.config as config
@@ -45,9 +46,13 @@ def voice_handler(bot, update):
         emoji = '😐'
     else:
         emoji = '🙂'
-    update.message.reply_text('Speaker in {} mood \nOrientation:{} \
-                              \nRelated categories are {} \nspeech from {} \
-                              \n{}'.format(result.audio_sentiment[0], emoji, result.categories.keys(), user, result.text))
+    update.message.reply_markdown('Speaker in {} mood \nOrientation:{} \
+                                  \nRelated categories are {} \n*{}*\n{}'.format(
+                                      result.audio_sentiment,
+                                      emoji,
+                                      ', '.join(result.categories.keys()),
+                                      user,
+                                      result.text))
 
     private_message_if_emergency(bot, update, result.text, categories=result.categories)
 

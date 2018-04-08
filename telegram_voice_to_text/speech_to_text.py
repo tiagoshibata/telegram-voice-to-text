@@ -21,7 +21,7 @@ def process_speech(speech_file):
     return SpeechResults(
         text=text,
         audio_sentiment=audio_sentiment,
-        categories=text_categories,
+        categories=text_categories or {},
         text_sentiment=text_sentiment,
         relevant=relevant,
     )

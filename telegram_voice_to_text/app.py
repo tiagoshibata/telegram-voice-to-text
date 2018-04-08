@@ -85,14 +85,10 @@ def photo_analysis(bot, update, file_url):
     model = app.models.get("general-v1.3")
     result = model.predict_by_url(url=file_url)
 
-    i = 0
-    text_result = ""
-    for x in result['outputs'][0]['data']['concepts']:
-        text_result += x['name'] + "\n"
-        i += 1
-        if i > 5:
-            break
-    update.message.reply_text(u"Conteúdo da imagem: " + text_result)
+    text_result = []
+    for x in result['outputs'][0]['data']['concepts'][:5]:
+        text_result.append(x['name'])
+    update.message.reply_text(u"Conteúdo da imagem: " + ', '.join(text_result))
 
 
 def photo_handler(bot, update):

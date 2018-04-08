@@ -5,14 +5,17 @@ from pathlib import Path
 import sys
 import tempfile
 
-import telegram_voice_to_text.config as config
-
+import requests
+import pytesseract
+from PIL import Image
+from clarifai.rest import ClarifaiApp
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
+import telegram_voice_to_text.config as config
 from telegram_voice_to_text.speech_to_text import process_speech, switch_language
-
-possible_topics = ['topic1', 'topic22', 'topic31', 'topic4', 'topic1e', 'topic23', 'topic31', 'topic4f', 'topic1v', 'topic2d']
+from telegram_voice_to_text.state import get_state, Filter
+from telegram_voice_to_text.categories import CATEGORIES
 
 selected_topics = []
 
@@ -36,10 +39,12 @@ def command_handler(bot, update):
         update.message.reply_text(reply)
 
     def topic_selection_handler(words):
-        global possible_topics
-        global selected_topics
-        selected_topics = []
-        keyboard = [InlineKeyboardButton(x, callback_data=x) for x in possible_topics]
+        Filter.enable_get_categorie = True
+        Filter.text_categories = []
+
+        categorie = [CATEGORIES[cat] for cat in CATEGORIES]
+
+        keyboard = [InlineKeyboardButton(x, callback_data=x) for x in categorie]
 
         keyboard = [keyboard[x:x + 4] for x in range(0, len(keyboard), 4)]
 
@@ -47,12 +52,23 @@ def command_handler(bot, update):
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        update.message.reply_text('Please choose the topics you have interest and press ok:'
-                                  , reply_markup=reply_markup)
+        update.message.reply_text('Please choose the topics you have interest and press ok:',
+                                  reply_markup=reply_markup)
+
+    def categories_handler(words):
+        if words:
+            if all(x in CATEGORIES for x in words):
+                get_state().filters.text_categories = words
+                reply = 'Categories updated: {}'.format(', '.join(words))
+            else:
+                reply = 'Invalid category found. Valid categories are: {}'.format(', '.join(CATEGORIES))
+        else:
+            pass  # TODO show inline options
 
     handlers = [
         (('lang', 'language'), language_handler),
-        (('topics', 'select topics'), topic_selection_handler)
+        (('topics', 'topic'), topic_selection_handler),
+        ('categories', categories_handler),
     ]
 
     words = update.message.text.split()
@@ -78,20 +94,55 @@ def voice_handler(bot, update):
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
 
 
-def button(bot, update):
+def button_handler(bot, update):
     query = update.callback_query
+
     global selected_topics
 
     if query.data == "OK":
-        print("OK")
-    else:
-        selected_topics += [query.data]
-        print(selected_topics)
+        Filter.enable_get_categorie = False
+        bot.edit_message_text(text="Selection stored: " + str(Filter.text_categories),
+                              chat_id=query.message.chat_id,
+                              message_id=query.message.message_id)
+    elif Filter.enable_get_categorie:
+        if query.data not in Filter.text_categories:
+            Filter.text_categories += [query.data]
+            print(Filter.text_categories)
 
 
 def text_handler(bot, update):
+    text  = update.message.text
     if update.message.text == "oi":
         update.effective_user.send_message(text="oiii")
+        bot.send_message(126470144, text="oii")  # erich's ID
+
+
+def photo_handler(bot, update):
+    file = update.message.document.get_file(timeout=120)
+
+    response = requests.get(file['file_path'], stream=True)
+    response.raise_for_status()
+
+    with open('output.jpg', 'wb') as handle:
+        for block in response.iter_content(1024):
+            handle.write(block)
+
+    with open('output.jpg', 'r') as handle:
+        text = pytesseract.image_to_string(Image.open(handle))
+        update.message.reply_text(u"Transcrição do texto da imagem: " + text)
+
+    app = ClarifaiApp(api_key='d8090e6a90104ec0b190f3a975e5b912')
+    model = app.models.get("general-v1.3")
+    result = model.predict_by_url(url=file['file_path'])
+
+    i = 0
+    text_result = ""
+    for x in result['outputs'][0]['data']['concepts']:
+        text_result += x['name'] + "\n"
+        i += 1
+        if i > 5:
+            break
+    update.message.reply_text(u"Conteúdo da imagem: " + text_result)
 
 
 def error(bot, update, error):
@@ -106,7 +157,8 @@ def main():
     dp.add_handler(MessageHandler(Filters.command, command_handler))
     dp.add_handler(MessageHandler(Filters.voice, voice_handler))
     dp.add_handler(MessageHandler(Filters.text, text_handler))
-    updater.dispatcher.add_handler(CallbackQueryHandler(button))
+    dp.add_handler(MessageHandler(Filters.document, photo_handler))
+    updater.dispatcher.add_handler(CallbackQueryHandler(button_handler))
 
     dp.add_error_handler(error)
 

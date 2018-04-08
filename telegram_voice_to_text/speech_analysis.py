@@ -16,8 +16,8 @@ Vokaturi.load(str(vokaturi_directory / 'OpenVokaturi-3-0-linux64.so'))
 
 def read_speech(path):
     import subprocess
-    output = Path(path).resolve().parent / 'file.wav'
-    subprocess.check_call(['sox', '|opusdec --force-wav {} -'.format(path), str(output)])
+    output = str(Path(path).resolve().parent / 'file.wav')
+    subprocess.check_call(['sox', '|opusdec --force-wav {} -'.format(path), output])
     return scipy.io.wavfile.read(output)
 
 

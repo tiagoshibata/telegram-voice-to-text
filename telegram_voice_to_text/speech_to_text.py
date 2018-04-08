@@ -201,7 +201,7 @@ def process_speech_text(speech_raw, sample_rate):
 
     for result in response.results:
         text += result.alternatives[0].transcript + " "
-        total_confidence += result.alternatives[0].confidence/len(response.results)
+        total_confidence += result.alternatives[0].confidence / len(response.results)
 
     print(total_confidence)
 

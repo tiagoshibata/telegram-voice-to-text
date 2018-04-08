@@ -21,14 +21,23 @@ def help(bot, update):
 
 
 def command_handler(bot, update):
-    text = update.message.text
-    words = text.split()
-    if words[0].lower() in ['/lang', '/language']:
-        if len(words) < 2:
+    def language_handler(words):
+        if len(words) != 1:
             reply = 'Usage: /lang <language code> or /language <language code>'
         else:
-            reply = switch_language(words[1])
+            reply = switch_language(words[0])
         update.message.reply_text(reply)
+
+    handlers = [
+        (('lang', 'language'), language_handler),
+    ]
+
+    words = update.message.text.split()
+    for command, handler in handlers:
+        if isinstance(command, str):
+            command = [command]
+        if words[0].lower()[1:] in command:
+            return handler(words[1:])
     else:
         update.message.reply_text('Unknown command')
 
@@ -38,7 +47,6 @@ def voice_handler(bot, update):
     if from_user and from_user['is_bot']:
         return
     data = update.message.voice.get_file()
-    print(data.file_path)
     with tempfile.TemporaryDirectory() as directory:
         custom_path = Path(directory, data.file_path.rsplit('/', 1)[-1])
         data.download(custom_path=custom_path)

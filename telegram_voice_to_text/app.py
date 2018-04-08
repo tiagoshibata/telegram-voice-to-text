@@ -44,7 +44,7 @@ def command_handler(bot, update):
         get_state().filters.enable_get_categorie = True
         get_state().filters.text_categories = []
 
-        categorie = [CATEGORIES[cat] for cat in CATEGORIES]
+        categorie = [cat for cat in CATEGORIES]
 
         keyboard = [InlineKeyboardButton(x, callback_data=x) for x in categorie]
 
@@ -104,7 +104,7 @@ def button_handler(bot, update):
     state = get_state()
     if query.data == "OK":
         state.filters.enable_get_categorie = False
-        bot.edit_message_text(text="Selection stored: " + str(state.filters.text_categories),
+        bot.edit_message_text(text="Selection stored: " + ", ".join(state.filters.text_categories),
                               chat_id=query.message.chat_id,
                               message_id=query.message.message_id)
     elif state.filters.enable_get_categorie:

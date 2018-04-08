@@ -43,6 +43,7 @@ def voice_handler(bot, update):
 
     reply = []
     if result.audio_sentiment:
+        print(result.audio_sentiment)
         sentiments = sorted(
             {key: value for key, value in result.audio_sentiment.items() if value > 0.3},
             key=lambda x: result.audio_sentiment[x])
@@ -56,7 +57,9 @@ def voice_handler(bot, update):
             emoji = '🙂'
         reply.append('Text mood: {}'.format(emoji))
     if result.categories:
-        reply.append('Related categories: {}'.format(', '.join(result.categories.keys())))
+        categories = result.categories.keys()
+        categories = set([x.split('/', 2)[1] for x in categories])
+        reply.append('Related categories: {}'.format(', '.join(categories)))
 
     update.message.reply_markdown('. '.join(reply) + '.\n*{}*\n{}'.format(
         user, result.text or '_No text detected_'

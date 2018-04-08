@@ -10,6 +10,7 @@ import pytesseract
 from PIL import Image
 from clarifai.rest import ClarifaiApp
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import ReplyKeyboardMarkup
 
 import telegram_voice_to_text.config as config
 from telegram_voice_to_text.speech_to_text import process_speech, switch_language
@@ -74,6 +75,16 @@ def voice_handler(bot, update):
     user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
 
+    if emotion_filter:
+        print('emotion filter on')
+        if  result.audio_sentiment in emotions:
+            print('fear or anger detected!')
+    else:
+        print('emotion filter off')
+
+
+emotions = ['fearful, angry']
+
 
 def text_handler(bot, update):
     text  = update.message.text
@@ -87,11 +98,24 @@ def text_handler(bot, update):
     if is_relevant():
         private_reply.send_message('**Important** from {}: {}'.format('test', 'stub'))
 
+    # if update.message.text == "oi":
+    #     update.effective_user.send_message(text="oiii")
+    # if update.message.text == "emotion":
+    #     chat_id = update.message.chat_id
+    #     custom_keyboard = [['ON', 'OFF']]
+    #     reply_markup = ReplyKeyboardMarkup(custom_keyboard, one_time_keyboard=True)
+    #     bot.send_message(chat_id=chat_id,
+    #                   text="Turn emotion filter on?",
+    #                   reply_markup=reply_markup)
+    # if update.message.text == "ON":
+    #     emotion_filter = True
+    #     update.effective_user.send_message(text="Emotion filter ON!")
+    # if update.message.text == "OFF":
+    #     emotion_filter = False
+    #     update.effective_user.send_message(text="Emotion filter OFF!")
 
-def photo_handler(bot, update):
-    file = update.message.document.get_file(timeout=120)
-
-    response = requests.get(file['file_path'], stream=True)
+def photo_analysis(bot, update, file_url):
+    response = requests.get(file_url, stream=True)
     response.raise_for_status()
 
     with open('output.jpg', 'wb') as handle:
@@ -104,7 +128,7 @@ def photo_handler(bot, update):
 
     app = ClarifaiApp(api_key='d8090e6a90104ec0b190f3a975e5b912')
     model = app.models.get("general-v1.3")
-    result = model.predict_by_url(url=file['file_path'])
+    result = model.predict_by_url(url=file_url)
 
     i = 0
     text_result = ""
@@ -114,6 +138,18 @@ def photo_handler(bot, update):
         if i > 5:
             break
     update.message.reply_text(u"Conteúdo da imagem: " + text_result)
+
+
+def photo_handler(bot, update):
+    print (update.message.photo)
+    file = update.message.photo[-1].get_file()
+    photo_analysis(bot, update, file.file_path)
+
+
+def document_handler(bot, update):
+    print (update.message.document)
+    file = update.message.document.get_file(timeout=120)
+    photo_analysis(bot, update, file['file_path'])
 
 
 def error(bot, update, error):
@@ -128,7 +164,8 @@ def main():
     dp.add_handler(MessageHandler(Filters.command, command_handler))
     dp.add_handler(MessageHandler(Filters.voice, voice_handler))
     dp.add_handler(MessageHandler(Filters.text, text_handler))
-    dp.add_handler(MessageHandler(Filters.document, photo_handler))
+    dp.add_handler(MessageHandler(Filters.document, document_handler))
+    dp.add_handler(MessageHandler(Filters.photo, photo_handler))
 
     dp.add_error_handler(error)
 

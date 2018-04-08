@@ -10,20 +10,24 @@ import pytesseract
 from PIL import Image
 from clarifai.rest import ClarifaiApp
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 import telegram_voice_to_text.config as config
-from telegram_voice_to_text.speech_to_text import process_speech, switch_language
+from telegram_voice_to_text.speech_to_text import process_speech
 from telegram_voice_to_text.text_analysis import process_text, is_desired_category, is_emergency_text
 from telegram_voice_to_text.state import get_state
-from telegram_voice_to_text.categories import CATEGORIES
+from telegram_voice_to_text.command_handler import command_handler
 import telegram_voice_to_text.private_reply as private_reply
 
 selected_topics = []
 
 
-# Define a few command handlers. These usually take the two arguments bot and
-# update. Error handlers also receive the raised TelegramError object in error.
+def parse_user(update):
+    from_user = update.message.from_user
+    if from_user and from_user['is_bot']:
+        return
+    return '{} {}'.format(from_user['first_name'], from_user['last_name'])
+
+
 def start(bot, update):
     update.message.reply_text('Hello! I am the Voice to Text and Sentiment bot!')
 
@@ -32,68 +36,17 @@ def help(bot, update):
     update.message.reply_text('TODO Help text')
 
 
-def command_handler(bot, update):
-    def language_handler(words):
-        if len(words) != 1:
-            reply = 'Usage: /lang <language code> or /language <language code>'
-        else:
-            reply = switch_language(words[0])
-        update.message.reply_text(reply)
-
-    def topic_selection_handler(words):
-        get_state().filters.enable_get_categorie = True
-        get_state().filters.text_categories = []
-
-        categorie = [cat for cat in CATEGORIES]
-
-        keyboard = [InlineKeyboardButton(x, callback_data=x) for x in categorie]
-
-        keyboard = [keyboard[x:x + 4] for x in range(0, len(keyboard), 4)]
-
-        keyboard += [[InlineKeyboardButton("OK", callback_data="OK")]]
-
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        update.message.reply_text('Please choose the topics you have interest and press ok:',
-                                  reply_markup=reply_markup)
-
-    def categories_handler(words):
-        if words:
-            if all(x in CATEGORIES for x in words):
-                get_state().filters.text_categories = words
-                reply = 'Categories updated: {}'.format(', '.join(words))
-            else:
-                reply = 'Invalid category found. Valid categories are: {}'.format(', '.join(CATEGORIES))
-        else:
-            pass  # TODO show inline options
-
-    handlers = [
-        (('lang', 'language'), language_handler),
-        (('topics', 'topic'), topic_selection_handler),
-        ('categories', categories_handler),
-    ]
-
-    words = update.message.text.split()
-    for command, handler in handlers:
-        if isinstance(command, str):
-            command = [command]
-        if words[0].lower()[1:] in command:
-            return handler(words[1:])
-    else:
-        update.message.reply_text('Unknown command')
-
-
 def voice_handler(bot, update):
-    from_user = update.message.from_user
-    if from_user and from_user['is_bot']:
+    user = parse_user(update)
+    if not user:
         return
     data = update.message.voice.get_file()
     with tempfile.TemporaryDirectory() as directory:
         custom_path = Path(directory, data.file_path.rsplit('/', 1)[-1])
         data.download(custom_path=str(custom_path))
         result = process_speech(custom_path)
-    user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
+    private_message_if_emergency(bot, update, result.text, categories=result.categories)
 
 
 def button_handler(bot, update):
@@ -114,36 +67,8 @@ def button_handler(bot, update):
 
 
 def text_handler(bot, update):
-    text  = update.message.text
+    private_message_if_emergency(bot, update, update.message.text)
 
-    def is_relevant():
-        if is_emergency_text(text):
-            return True
-        binary_score, categories = process_text(text)
-        return is_desired_category(categories)
-
-    if is_relevant():
-        from_user = update.message.from_user
-        if from_user and from_user['is_bot']:
-            return
-        user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
-        private_reply.send_message(bot, '*Important from {}*: {}'.format(user, text))
-
-    # if update.message.text == "oi":
-    #     update.effective_user.send_message(text="oiii")
-    # if update.message.text == "emotion":
-    #     chat_id = update.message.chat_id
-    #     custom_keyboard = [['ON', 'OFF']]
-    #     reply_markup = ReplyKeyboardMarkup(custom_keyboard, one_time_keyboard=True)
-    #     bot.send_message(chat_id=chat_id,
-    #                   text="Turn emotion filter on?",
-    #                   reply_markup=reply_markup)
-    # if update.message.text == "ON":
-    #     emotion_filter = True
-    #     update.effective_user.send_message(text="Emotion filter ON!")
-    # if update.message.text == "OFF":
-    #     emotion_filter = False
-    #     update.effective_user.send_message(text="Emotion filter OFF!")
 
 def photo_analysis(bot, update, file_url):
     response = requests.get(file_url, stream=True)
@@ -161,14 +86,10 @@ def photo_analysis(bot, update, file_url):
     model = app.models.get("general-v1.3")
     result = model.predict_by_url(url=file_url)
 
-    i = 0
-    text_result = ""
-    for x in result['outputs'][0]['data']['concepts']:
-        text_result += x['name'] + "\n"
-        i += 1
-        if i > 5:
-            break
-    update.message.reply_text(u"Conteúdo da imagem: " + text_result)
+    text_result = []
+    for x in result['outputs'][0]['data']['concepts'][:5]:
+        text_result.append(x['name'])
+    update.message.reply_text(u"Conteúdo da imagem: " + ', '.join(text_result))
 
 
 def photo_handler(bot, update):
@@ -187,6 +108,21 @@ def error(bot, update, error):
     logging.warning('Update "%s": error "%s"', update, error)
 
 
+def private_message_if_emergency(bot, update, text, categories=None):
+    user = parse_user(update)
+    if not user:
+        return
+    relevant = False
+    if is_emergency_text(text):
+        relevant = True
+    else:
+        if categories is None:
+            _, categories = process_text(text)
+        relevant = is_desired_category(categories)
+    if relevant:
+        private_reply.send_message(bot, '*Important from {}*: {}'.format(user, text))
+
+
 def main():
     updater = Updater(config.get('TOKEN'))
     dp = updater.dispatcher
@@ -196,10 +132,9 @@ def main():
     dp.add_handler(MessageHandler(Filters.voice, voice_handler))
     dp.add_handler(MessageHandler(Filters.text, text_handler))
     dp.add_handler(MessageHandler(Filters.document, photo_handler))
-    updater.dispatcher.add_handler(CallbackQueryHandler(button_handler))
     dp.add_handler(MessageHandler(Filters.document, document_handler))
     dp.add_handler(MessageHandler(Filters.photo, photo_handler))
-
+    dp.add_handler(CallbackQueryHandler(button_handler))
     dp.add_error_handler(error)
 
     updater.start_polling()

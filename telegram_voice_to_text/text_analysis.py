@@ -66,4 +66,4 @@ def is_emergency_text(text):
 
 
 def is_desired_category(text_categories):
-    return any(text_categories.get(x, 0) > 0.5 for x in get_state().filters.text_categories)
+    return text_categories and any(text_categories.get(x, 0) > 0.5 for x in get_state().filters.text_categories)

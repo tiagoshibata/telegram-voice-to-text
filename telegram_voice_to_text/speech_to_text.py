@@ -4,26 +4,8 @@ from .state import get_state
 from .speech_analysis import read_speech, speech_to_text, get_sentiment, is_important_sentiment
 from .text_analysis import process_text, is_emergency_text, is_desired_category
 
-language_codes = {
-    'english': 'en-US',
-    'português': 'pt-BR',
-}
-
-languages = {
-    'en-US': 'Language set to English!',
-    'pt-BR': 'Português selecionado!',
-}
-
 SpeechResults = namedtuple('SpeechResults', ['text', 'audio_sentiment', 'categories',
                            'text_sentiment', 'relevant'])
-
-def switch_language(new_language):
-    state = get_state()
-    language_code = language_codes.get(new_language, new_language)
-    if language_code in languages:
-        state.language = language_code
-        return languages[language_code]
-    return 'Invalid language code. '
 
 
 def process_speech(speech_file):

@@ -16,6 +16,7 @@ from telegram_voice_to_text.text_analysis import process_text, is_desired_catego
 from telegram_voice_to_text.state import get_state
 from telegram_voice_to_text.command_handler import command_handler
 from telegram_voice_to_text.start_command import start
+from telegram_voice_to_text.help_command import help
 import telegram_voice_to_text.private_reply as private_reply
 
 selected_topics = []
@@ -26,10 +27,6 @@ def parse_user(update):
     if from_user and from_user['is_bot']:
         return
     return '{} {}'.format(from_user['first_name'], from_user['last_name'])
-
-
-def help(bot, update):
-    update.message.reply_text('TODO Help text')
 
 
 def voice_handler(bot, update):

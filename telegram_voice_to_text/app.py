@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import logging
 from pathlib import Path
-import sys
 import tempfile
 
 import requests
@@ -16,6 +15,7 @@ from telegram_voice_to_text.speech_to_text import process_speech
 from telegram_voice_to_text.text_analysis import process_text, is_desired_category, is_emergency_text
 from telegram_voice_to_text.state import get_state
 from telegram_voice_to_text.command_handler import command_handler
+from telegram_voice_to_text.start_command import start
 import telegram_voice_to_text.private_reply as private_reply
 
 selected_topics = []
@@ -26,10 +26,6 @@ def parse_user(update):
     if from_user and from_user['is_bot']:
         return
     return '{} {}'.format(from_user['first_name'], from_user['last_name'])
-
-
-def start(bot, update):
-    update.message.reply_text('Hello! I am the Voice to Text and Sentiment bot!')
 
 
 def help(bot, update):
@@ -63,11 +59,11 @@ def button_handler(bot, update):
 
     state = get_state()
     if query.data == "OK":
-        state.filters.enable_get_categorie = False
-        bot.edit_message_text(text="Selection stored: " + str(state.filters.text_categories),
+        state.filters.enable_get_categories = False
+        bot.edit_message_text(text="Selection stored: " + ", ".join(state.filters.text_categories),
                               chat_id=query.message.chat_id,
                               message_id=query.message.message_id)
-    elif state.filters.enable_get_categorie:
+    elif state.filters.enable_get_categories:
         if query.data not in state.filters.text_categories:
             state.filters.text_categories += [query.data]
             print(state.filters.text_categories)
@@ -87,20 +83,16 @@ def photo_analysis(bot, update, file_url):
 
     with open('output.jpg', 'r') as handle:
         text = pytesseract.image_to_string(Image.open(handle))
-        update.message.reply_text(u"Transcrição do texto da imagem: " + text)
+        private_reply.send_message(bot, u"*Transcrição do texto da imagem:* " + text)
 
     app = ClarifaiApp(api_key='d8090e6a90104ec0b190f3a975e5b912')
     model = app.models.get("general-v1.3")
     result = model.predict_by_url(url=file_url)
 
-    i = 0
-    text_result = ""
-    for x in result['outputs'][0]['data']['concepts']:
-        text_result += x['name'] + "\n"
-        i += 1
-        if i > 5:
-            break
-    update.message.reply_text(u"Conteúdo da imagem: " + text_result)
+    text_result = []
+    for x in result['outputs'][0]['data']['concepts'][:5]:
+        text_result.append(x['name'])
+    private_reply.send_message(bot, u"*Conteúdo da imagem:* " + ', '.join(text_result))
 
 
 def photo_handler(bot, update):

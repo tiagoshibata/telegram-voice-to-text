@@ -1,5 +1,4 @@
 from collections import namedtuple
-import sys
 
 from .state import get_state
 from .speech_analysis import read_speech, speech_to_text, get_sentiment, is_important_sentiment

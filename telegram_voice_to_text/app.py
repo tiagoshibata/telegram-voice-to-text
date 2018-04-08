@@ -39,10 +39,12 @@ def voice_handler(bot, update):
         data.download(custom_path=str(custom_path))
         result = process_speech(custom_path)
 
-    if result.text_sentiment > 0:
-        emoji = '🙂'
-    else:
+    if result.text_sentiment < -0.25:
         emoji = '🙁'
+    elif result.text_sentiment < 0.25:
+        emoji = '😐'
+    else:
+        emoji = '🙂'
     update.message.reply_text('Speaker in {} mood \nOrientation:{} \
                               \nRelated categories are {} \nspeech from {}\n{}'.format(result.audio_sentiment, emoji, result.categories.keys(), user, result.text))
 

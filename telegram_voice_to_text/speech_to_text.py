@@ -93,7 +93,8 @@ def binary_sentiment(text, verbose=True):
 
     return sentiment.score
 
-SpeechResults = namedtuple('SpeechResults', ['text', 'audio_sentiment', 'categories', 'text_sentiment'])
+SpeechResults = namedtuple('SpeechResults', ['text', 'audio_sentiment', 'categories',
+                           'text_sentiment', 'blacklist'])
 
 
 def process_text(text):
@@ -155,7 +156,9 @@ def process_speech(speech_file):
         audio_sentiment=get_sentiment(sample_rate, samples),
         categories=text_categories,
         text_sentiment=text_sentiment,
+        blacklist=is_in_blacklist(text)
     )
+
 
 def preprocess_text(raw_text):
     words = len(raw_text.split(sep=' '))
@@ -165,3 +168,12 @@ def preprocess_text(raw_text):
         extended_text = raw_text + ' ' + raw_text
         return extended_text
     else: return raw_text
+
+blacklist = ['fogo', 'emergencia', 'emergência', 'tiro', 'policia', 'morte',
+            'incêndio', 'socorro']
+
+def is_in_blacklist (text):
+    for word in blacklist:
+        if word in text:
+            return True
+    return False

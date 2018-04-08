@@ -17,18 +17,20 @@ def start(bot, update):
 
 
 def help(bot, update):
-    command_code = update.message.text.startswith('/lang')
-    if command_code.startswith('/lang'):
-        reply = switch_language(command_code.split(" ")[1])
-        update.message.reply_text(reply)
-    else:
-        update.message.reply_text('TODO Help text')
+    update.message.reply_text('TODO Help text')
 
 
 def command_handler(bot, update):
-    if update.message.text.startswith('/language'):
-        pass
-    update.message.reply_text('TODO commands')
+    text = update.message.text
+    words = text.split()
+    if words[0].lower() in ['/lang', '/language']:
+        if len(words) < 2:
+            reply = 'Usage: /lang <language code> or /language <language code>'
+        else:
+            reply = switch_language(words[1])
+        update.message.reply_text(reply)
+    else:
+        update.message.reply_text('Unknown command')
 
 
 def voice_handler(bot, update):

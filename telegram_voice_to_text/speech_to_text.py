@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from google.cloud import language
 from google.cloud.language import enums
 from google.cloud.language import types
@@ -6,16 +8,23 @@ import scipy.io.wavfile
 
 lang = 'en-US'
 
+language_codes = {
+    'english': 'en-US',
+    'português': 'pt-BR',
+}
+
+languages = {
+    'en-US': 'Now language is english',
+    'pt-BR': 'Agora a o bot está em português',
+}
 
 def switch_language(language):
     global lang
-    if language == 'english':
-        lang = 'en-US'
-        switch_code = 'Now language is english'
-    elif language == 'portugues':
-        lang = 'pt-BT'
-        switch_code = 'Agora a o bot está em português'
-    return switch_code
+    language_code = language_codes.get(language, language)
+    if language_code in languages:
+        lang = language_code
+        return languages[language_code]
+    return 'Invalid language code. '
 
 
 def process_speech_text(speech_raw, sample_rate):

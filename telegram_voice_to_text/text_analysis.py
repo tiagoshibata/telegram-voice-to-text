@@ -41,7 +41,7 @@ def binary_sentiment(text, verbose=True):
     return sentiment.score
 
 
-def preprocess_text(raw_text):
+def _preprocess_text(raw_text):
     words = len(raw_text.split(sep=' '))
     if words < 10:
          return raw_text
@@ -52,6 +52,7 @@ def preprocess_text(raw_text):
 
 
 def process_text(text):
+    text = _preprocess_text(text)
     bin_score = binary_sentiment(text)
     categories_dict = classify(text)
     return bin_score, categories_dict

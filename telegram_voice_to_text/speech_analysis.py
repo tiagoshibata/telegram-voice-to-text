@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 
 from google.cloud import speech
-from google.cloud.language import enums, types
+from google.cloud.speech import enums, types
 import scipy.io.wavfile
 
 from .config import project_root

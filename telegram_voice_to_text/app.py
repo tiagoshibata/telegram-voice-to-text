@@ -9,13 +9,15 @@ import requests
 import pytesseract
 from PIL import Image
 from clarifai.rest import ClarifaiApp
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 import telegram_voice_to_text.config as config
 from telegram_voice_to_text.speech_to_text import process_speech, switch_language
-from telegram_voice_to_text.state import get_state, Filter
+from telegram_voice_to_text.text_analysis import process_text, is_desired_category, is_emergency_text
+from telegram_voice_to_text.state import get_state
 from telegram_voice_to_text.categories import CATEGORIES
+import telegram_voice_to_text.private_reply as private_reply
 
 selected_topics = []
 
@@ -39,8 +41,8 @@ def command_handler(bot, update):
         update.message.reply_text(reply)
 
     def topic_selection_handler(words):
-        Filter.enable_get_categorie = True
-        Filter.text_categories = []
+        get_state().filters.enable_get_categorie = True
+        get_state().filters.text_categories = []
 
         categorie = [CATEGORIES[cat] for cat in CATEGORIES]
 
@@ -93,21 +95,28 @@ def voice_handler(bot, update):
     user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
 
+    if emotion_filter:
+        print('emotion filter on')
+        if  result.audio_sentiment in emotions:
+            print('fear or anger detected!')
+    else:
+        print('emotion filter off')
 
 def button_handler(bot, update):
     query = update.callback_query
 
     global selected_topics
 
+    state = get_state()
     if query.data == "OK":
-        Filter.enable_get_categorie = False
-        bot.edit_message_text(text="Selection stored: " + str(Filter.text_categories),
+        state.filters.enable_get_categorie = False
+        bot.edit_message_text(text="Selection stored: " + str(state.filters.text_categories),
                               chat_id=query.message.chat_id,
                               message_id=query.message.message_id)
-    elif Filter.enable_get_categorie:
-        if query.data not in Filter.text_categories:
-            Filter.text_categories += [query.data]
-            print(Filter.text_categories)
+    elif state.filters.enable_get_categorie:
+        if query.data not in state.filters.text_categories:
+            state.filters.text_categories += [query.data]
+            print(state.filters.text_categories)
 
 
 def text_handler(bot, update):
@@ -116,11 +125,39 @@ def text_handler(bot, update):
         update.effective_user.send_message(text="oiii")
         bot.send_message(126470144, text="oii")  # erich's ID
 
+emotions = ['fearful, angry']
 
-def photo_handler(bot, update):
-    file = update.message.document.get_file(timeout=120)
 
-    response = requests.get(file['file_path'], stream=True)
+def text_handler(bot, update):
+    text  = update.message.text
+
+    def is_relevant():
+        if is_emergency_text(text):
+            return True
+        binary_score, categories = process_text(text)
+        return is_desired_category(categories)
+
+    if is_relevant():
+        private_reply.send_message('**Important** from {}: {}'.format('test', 'stub'))
+
+    # if update.message.text == "oi":
+    #     update.effective_user.send_message(text="oiii")
+    # if update.message.text == "emotion":
+    #     chat_id = update.message.chat_id
+    #     custom_keyboard = [['ON', 'OFF']]
+    #     reply_markup = ReplyKeyboardMarkup(custom_keyboard, one_time_keyboard=True)
+    #     bot.send_message(chat_id=chat_id,
+    #                   text="Turn emotion filter on?",
+    #                   reply_markup=reply_markup)
+    # if update.message.text == "ON":
+    #     emotion_filter = True
+    #     update.effective_user.send_message(text="Emotion filter ON!")
+    # if update.message.text == "OFF":
+    #     emotion_filter = False
+    #     update.effective_user.send_message(text="Emotion filter OFF!")
+
+def photo_analysis(bot, update, file_url):
+    response = requests.get(file_url, stream=True)
     response.raise_for_status()
 
     with open('output.jpg', 'wb') as handle:
@@ -133,7 +170,7 @@ def photo_handler(bot, update):
 
     app = ClarifaiApp(api_key='d8090e6a90104ec0b190f3a975e5b912')
     model = app.models.get("general-v1.3")
-    result = model.predict_by_url(url=file['file_path'])
+    result = model.predict_by_url(url=file_url)
 
     i = 0
     text_result = ""
@@ -143,6 +180,18 @@ def photo_handler(bot, update):
         if i > 5:
             break
     update.message.reply_text(u"Conteúdo da imagem: " + text_result)
+
+
+def photo_handler(bot, update):
+    print (update.message.photo)
+    file = update.message.photo[-1].get_file()
+    photo_analysis(bot, update, file.file_path)
+
+
+def document_handler(bot, update):
+    print (update.message.document)
+    file = update.message.document.get_file(timeout=120)
+    photo_analysis(bot, update, file['file_path'])
 
 
 def error(bot, update, error):
@@ -159,6 +208,8 @@ def main():
     dp.add_handler(MessageHandler(Filters.text, text_handler))
     dp.add_handler(MessageHandler(Filters.document, photo_handler))
     updater.dispatcher.add_handler(CallbackQueryHandler(button_handler))
+    dp.add_handler(MessageHandler(Filters.document, document_handler))
+    dp.add_handler(MessageHandler(Filters.photo, photo_handler))
 
     dp.add_error_handler(error)
 

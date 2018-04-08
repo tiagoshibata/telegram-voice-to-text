@@ -45,7 +45,14 @@ def voice_handler(bot, update):
         custom_path = Path(directory, data.file_path.rsplit('/', 1)[-1])
         data.download(custom_path=str(custom_path))
         result = process_speech(custom_path)
-    update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
+
+    if result.text_sentiment > 0:
+        emoji = 'U+1F642'
+    else:
+        emoji = 'U+1F641'
+    update.message.reply_text('Speaker in {} mood \nOrientation:{} \
+                              \nRelated categories are {} \nspeech from {}\n{}'.format(result.audio_sentiment, emoji, result.categories.keys(), user, result.text))
+
     private_message_if_emergency(bot, update, result.text, categories=result.categories)
 
 

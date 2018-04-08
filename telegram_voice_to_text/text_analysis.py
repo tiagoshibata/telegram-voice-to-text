@@ -62,7 +62,7 @@ blacklist = ['fogo', 'emergencia', 'emergência', 'tiro', 'policia', 'morte',
 
 
 def is_emergency_text(text):
-    return any(word in text for word in blacklist)
+    return any(word in text.lower() for word in blacklist)
 
 
 def is_desired_category(text_categories):

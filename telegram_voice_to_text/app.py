@@ -95,12 +95,6 @@ def voice_handler(bot, update):
     user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
 
-    if emotion_filter:
-        print('emotion filter on')
-        if  result.audio_sentiment in emotions:
-            print('fear or anger detected!')
-    else:
-        print('emotion filter off')
 
 def button_handler(bot, update):
     query = update.callback_query
@@ -121,15 +115,6 @@ def button_handler(bot, update):
 
 def text_handler(bot, update):
     text  = update.message.text
-    if update.message.text == "oi":
-        update.effective_user.send_message(text="oiii")
-        bot.send_message(126470144, text="oii")  # erich's ID
-
-emotions = ['fearful, angry']
-
-
-def text_handler(bot, update):
-    text  = update.message.text
 
     def is_relevant():
         if is_emergency_text(text):
@@ -138,7 +123,11 @@ def text_handler(bot, update):
         return is_desired_category(categories)
 
     if is_relevant():
-        private_reply.send_message('**Important** from {}: {}'.format('test', 'stub'))
+        from_user = update.message.from_user
+        if from_user and from_user['is_bot']:
+            return
+        user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
+        private_reply.send_message(bot, '*Important from {}*: {}'.format(user, text))
 
     # if update.message.text == "oi":
     #     update.effective_user.send_message(text="oiii")

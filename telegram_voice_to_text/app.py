@@ -38,6 +38,11 @@ def voice_handler(bot, update):
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
 
 
+def text_handler(bot, update):
+    if update.message.text == "oi":
+        update.effective_user.send_message(text="oiii")
+
+
 def error(bot, update, error):
     logging.warning('Update "%s": error "%s"', update, error)
 
@@ -49,6 +54,7 @@ def main():
     dp.add_handler(CommandHandler('help', help))
     dp.add_handler(MessageHandler(Filters.command, command_handler))
     dp.add_handler(MessageHandler(Filters.voice, voice_handler))
+    dp.add_handler(MessageHandler(Filters.text, text_handler))
 
     dp.add_error_handler(error)
 

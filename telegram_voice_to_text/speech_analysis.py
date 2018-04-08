@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 from google.cloud import speech
 from google.cloud.language import enums, types

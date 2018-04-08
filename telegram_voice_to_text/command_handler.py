@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 
 from telegram_voice_to_text.speech_to_text import process_speech
 from telegram_voice_to_text.state import get_state
@@ -46,12 +46,22 @@ def command_handler(bot, update):
             keyboard = [keyboard[x:x + 4] for x in range(0, len(keyboard), 4)]
             keyboard += [[InlineKeyboardButton("OK", callback_data="OK")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.message.reply_text('Please choose the topics you have interest and press ok:',
-                                    reply_markup=reply_markup)
+            update.message.reply_text('Please choose the topics you have interest and press OK:',
+                                      parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+
+    def sentiment_filter_handler(words):
+        state = get_state()
+        if len(words) != 1 or words[0].lower() not in ['on', 'off']:
+            reply = 'Usage: /sentiment <ON or OFF> or /sentiment_filter <ON or OFF>'
+        else:
+            state.filters.speech_sentiments_enabled = words[0].lower() == 'on'
+            reply = 'Sentiment filter {}'.format(words[0].upper())
+        update.message.reply_text(reply)
 
     handlers = [
         (('lang', 'language'), language_handler),
         (('categories', 'topics', 'topic'), topic_selection_handler),
+        (('sentiment', 'sentiment_filter'), sentiment_filter_handler),
     ]
 
     words = update.message.text.split()

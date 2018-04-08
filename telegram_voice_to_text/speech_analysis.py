@@ -50,8 +50,7 @@ def get_sentiment(sample_rate, samples):
                 'fearful': emotionProbabilities.fear,
             }
             print('Sentiments: {}'.format(sentiments))
-            sentiment = max(sentiments, key=lambda x: sentiments[x])
-            return sentiment, sentiments[sentiment]
+            return sentiments
     finally:
         voice.destroy()
 

@@ -8,9 +8,13 @@ import tempfile
 import telegram_voice_to_text.config as config
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
 from telegram_voice_to_text.speech_to_text import process_speech, switch_language
+
+possible_topics = ['topic1', 'topic22', 'topic31', 'topic4', 'topic1e', 'topic23', 'topic31', 'topic4f', 'topic1v', 'topic2d']
+
+selected_topics = []
 
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -32,14 +36,19 @@ def command_handler(bot, update):
         update.message.reply_text(reply)
 
     def topic_selection_handler(words):
-        keyboard = [[InlineKeyboardButton("Option 1", callback_data='1'),
-                     InlineKeyboardButton("Option 2", callback_data='2')],
+        global possible_topics
+        global selected_topics
+        selected_topics = []
+        keyboard = [InlineKeyboardButton(x, callback_data=x) for x in possible_topics]
 
-                    [InlineKeyboardButton("Option 3", callback_data='3')]]
+        keyboard = [keyboard[x:x + 4] for x in range(0, len(keyboard), 4)]
+
+        keyboard += [[InlineKeyboardButton("OK", callback_data="OK")]]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        update.message.reply_text('Please choose:', reply_markup=reply_markup)
+        update.message.reply_text('Please choose the topics you have interest and press ok:'
+                                  , reply_markup=reply_markup)
 
     handlers = [
         (('lang', 'language'), language_handler),
@@ -63,10 +72,21 @@ def voice_handler(bot, update):
     data = update.message.voice.get_file()
     with tempfile.TemporaryDirectory() as directory:
         custom_path = Path(directory, data.file_path.rsplit('/', 1)[-1])
-        data.download(custom_path=custom_path)
+        data.download(custom_path=str(custom_path))
         result = process_speech(custom_path)
     user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
+
+
+def button(bot, update):
+    query = update.callback_query
+    global selected_topics
+
+    if query.data == "OK":
+        print("OK")
+    else:
+        selected_topics += [query.data]
+        print(selected_topics)
 
 
 def text_handler(bot, update):
@@ -86,6 +106,7 @@ def main():
     dp.add_handler(MessageHandler(Filters.command, command_handler))
     dp.add_handler(MessageHandler(Filters.voice, voice_handler))
     dp.add_handler(MessageHandler(Filters.text, text_handler))
+    updater.dispatcher.add_handler(CallbackQueryHandler(button))
 
     dp.add_error_handler(error)
 

@@ -74,6 +74,7 @@ def voice_handler(bot, update):
 
 
 def text_handler(bot, update):
+    text  = update.message.text
     if update.message.text == "oi":
         update.effective_user.send_message(text="oiii")
         bot.send_message(126470144, text="oii")  # erich's ID

@@ -72,3 +72,4 @@ urllib3==1.22
 wrapt==1.10.11
 
 pytesseract==0.2.0
+clarifai

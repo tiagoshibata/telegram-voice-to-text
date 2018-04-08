@@ -46,6 +46,7 @@ def voice_handler(bot, update):
         data.download(custom_path=str(custom_path))
         result = process_speech(custom_path)
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
+    private_message_if_emergency(bot, update, result.text, categories=result.categories)
 
 
 def button_handler(bot, update):
@@ -111,18 +112,18 @@ def error(bot, update, error):
     logging.warning('Update "%s": error "%s"', update, error)
 
 
-def private_message_if_emergency(bot, update, text):
+def private_message_if_emergency(bot, update, text, categories=None):
     user = parse_user(update)
     if not user:
         return
-
-    def is_relevant():
-        if is_emergency_text(text):
-            return True
-        _, categories = process_text(text)
-        return is_desired_category(categories)
-
-    if is_relevant():
+    relevant = False
+    if is_emergency_text(text):
+        relevant = True
+    else:
+        if categories is None:
+            _, categories = process_text(text)
+        relevant = is_desired_category(categories)
+    if relevant:
         private_reply.send_message(bot, '*Important from {}*: {}'.format(user, text))
 
 

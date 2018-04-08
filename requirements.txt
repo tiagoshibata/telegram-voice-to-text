@@ -47,6 +47,7 @@ mccabe==0.6.1
 more-itertools==4.1.0
 numpy==1.14.2
 oauth2client==3.0.0
+Pillow==5.1.0
 pluggy==0.6.0
 ply==3.8
 proto-google-cloud-datastore-v1==0.90.4
@@ -60,6 +61,7 @@ pyasn1-modules==0.2.1
 pycparser==2.18
 pylint==1.8.4
 PySoundFile==0.9.0.post1
+pytesseract==0.2.0
 pytest==3.5.0
 pytest-pylint==0.9.0
 python-telegram-bot==10.0.1
@@ -70,6 +72,3 @@ scipy==1.0.1
 six==1.11.0
 urllib3==1.22
 wrapt==1.10.11
-
-pytesseract==0.2.0
-clarifai

@@ -7,7 +7,7 @@ import tempfile
 import telegram_voice_to_text.config as config
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-from telegram_voice_to_text.speech_to_text import process_speech
+from telegram_voice_to_text.speech_to_text import process_speech, switch_language
 
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -21,7 +21,16 @@ def help(bot, update):
 
 
 def command_handler(bot, update):
-    update.message.reply_text('TODO commands')
+    text = update.message.text
+    words = text.split()
+    if words[0].lower() in ['/lang', '/language']:
+        if len(words) < 2:
+            reply = 'Usage: /lang <language code> or /language <language code>'
+        else:
+            reply = switch_language(words[1])
+        update.message.reply_text(reply)
+    else:
+        update.message.reply_text('Unknown command')
 
 
 def voice_handler(bot, update):
@@ -38,6 +47,11 @@ def voice_handler(bot, update):
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
 
 
+def text_handler(bot, update):
+    if update.message.text == "oi":
+        update.effective_user.send_message(text="oiii")
+
+
 def error(bot, update, error):
     logging.warning('Update "%s": error "%s"', update, error)
 
@@ -49,6 +63,7 @@ def main():
     dp.add_handler(CommandHandler('help', help))
     dp.add_handler(MessageHandler(Filters.command, command_handler))
     dp.add_handler(MessageHandler(Filters.voice, voice_handler))
+    dp.add_handler(MessageHandler(Filters.text, text_handler))
 
     dp.add_error_handler(error)
 

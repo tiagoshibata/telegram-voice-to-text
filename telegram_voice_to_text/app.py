@@ -13,8 +13,10 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 import telegram_voice_to_text.config as config
 from telegram_voice_to_text.speech_to_text import process_speech, switch_language
+from telegram_voice_to_text.text_analysis import process_text, is_desired_category, is_emergency_text
 from telegram_voice_to_text.state import get_state
 from telegram_voice_to_text.categories import CATEGORIES
+import telegram_voice_to_text.private_reply as private_reply
 
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -75,9 +77,15 @@ def voice_handler(bot, update):
 
 def text_handler(bot, update):
     text  = update.message.text
-    if update.message.text == "oi":
-        update.effective_user.send_message(text="oiii")
-        bot.send_message(126470144, text="oii")  # erich's ID
+
+    def is_relevant():
+        if is_emergency_text(text):
+            return True
+        binary_score, categories = process_text(text)
+        return is_desired_category(categories)
+
+    if is_relevant():
+        private_reply.send_message('**Important** from {}: {}'.format('test', 'stub'))
 
 
 def photo_handler(bot, update):

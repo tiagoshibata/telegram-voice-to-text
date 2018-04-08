@@ -3,7 +3,7 @@ import sys
 
 from .state import get_state
 from .speech_analysis import read_speech, speech_to_text, get_sentiment, is_important_sentiment
-from .text_analysis import preprocess_text, process_text, is_emergency_text, is_desired_category
+from .text_analysis import process_text, is_emergency_text, is_desired_category
 
 language_codes = {
     'english': 'en-US',
@@ -30,7 +30,6 @@ def switch_language(new_language):
 def process_speech(speech_file):
     sample_rate, samples = read_speech(speech_file)
     text = speech_to_text(samples, sample_rate)
-    text = preprocess_text(text)
     text_sentiment, text_categories = process_text(text)
     audio_sentiment = get_sentiment(sample_rate, samples)
     relevant = True

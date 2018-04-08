@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import logging
 from pathlib import Path
-import sys
 import tempfile
 
 import requests
@@ -16,6 +15,7 @@ from telegram_voice_to_text.speech_to_text import process_speech
 from telegram_voice_to_text.text_analysis import process_text, is_desired_category, is_emergency_text
 from telegram_voice_to_text.state import get_state
 from telegram_voice_to_text.command_handler import command_handler
+from telegram_voice_to_text.start_command import start
 import telegram_voice_to_text.private_reply as private_reply
 
 selected_topics = []
@@ -26,10 +26,6 @@ def parse_user(update):
     if from_user and from_user['is_bot']:
         return
     return '{} {}'.format(from_user['first_name'], from_user['last_name'])
-
-
-def start(bot, update):
-    update.message.reply_text('Hello! I am the Voice to Text and Sentiment bot!')
 
 
 def help(bot, update):
@@ -56,11 +52,11 @@ def button_handler(bot, update):
 
     state = get_state()
     if query.data == "OK":
-        state.filters.enable_get_categorie = False
+        state.filters.enable_get_categories = False
         bot.edit_message_text(text="Selection stored: " + ", ".join(state.filters.text_categories),
                               chat_id=query.message.chat_id,
                               message_id=query.message.message_id)
-    elif state.filters.enable_get_categorie:
+    elif state.filters.enable_get_categories:
         if query.data not in state.filters.text_categories:
             state.filters.text_categories += [query.data]
             print(state.filters.text_categories)

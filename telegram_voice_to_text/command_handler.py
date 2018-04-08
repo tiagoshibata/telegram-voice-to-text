@@ -14,7 +14,7 @@ def command_handler(bot, update):
         update.message.reply_text(reply)
 
     def topic_selection_handler(words):
-        get_state().filters.enable_get_categorie = True
+        get_state().filters.enable_get_categories = True
         get_state().filters.text_categories = []
 
         categorie = [cat for cat in CATEGORIES]

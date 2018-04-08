@@ -1,7 +1,7 @@
 class Filter:
     speech_sentiments_enabled = False
     text_categories = []
-    enable_get_categorie = False
+    enable_get_categories = False
 
 class BotState:
     language = 'en-US'

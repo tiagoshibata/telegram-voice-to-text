@@ -211,7 +211,7 @@ def process_speech_text(speech_raw, sample_rate):
 
 
 def classify(text, verbose=True):
-    """Classify the input text into categories. """
+    """Classify the input text into categories."""
 
     language_client = language.LanguageServiceClient()
 
@@ -220,25 +220,13 @@ def classify(text, verbose=True):
         type=language.enums.Document.Type.PLAIN_TEXT)
     try:
         response = language_client.classify_text(document)
-    except InvalidArgument as e:
+    except Exception as e:
         print(e)
         return
     categories = response.categories
 
-    result = {}
-    for category in categories:
-        # Turn the categories into a dictionary of the form:
-        # {category.name: category.confidence}, so that they can
-        # be treated as a sparse vector.
-        result[category.name] = category.confidence
-
-    if verbose:
-        # print(text)
-        # for category in categories:
-        #     print(u'=' * 20)
-        #     print(u'{:<16}: {}'.format('category', category.name))
-        #     print(u'{:<16}: {}'.format('confidence', category.confidence))
-        print(result)
+    result = {x.name: x.confidence for x in categories}
+    print(result)
     return result
 
 
@@ -314,12 +302,13 @@ def process_speech(speech_file):
     text = process_speech_text(samples, sample_rate)
     text = preprocess_text(text)
     text_sentiment, text_categories = process_text(text)
+    audio_sentiment = get_sentiment(sample_rate, samples)
     return SpeechResults(
         text=text,
-        audio_sentiment=get_sentiment(sample_rate, samples),
+        audio_sentiment=audio_sentiment,
         categories=text_categories,
         text_sentiment=text_sentiment,
-        blacklist=is_in_blacklist(text)
+        blacklist=is_in_blacklist(text) or is_bad_sentiment(audio_sentiment),
     )
 
 
@@ -333,10 +322,14 @@ def preprocess_text(raw_text):
     else: return raw_text
 
 blacklist = ['fogo', 'emergencia', 'emergência', 'tiro', 'policia', 'morte',
-            'incêndio', 'socorro']
+            'incêndio', 'socorro', '911', 'emergency', 'fire', 'urgent']
 
 def is_in_blacklist (text):
     for word in blacklist:
         if word in text:
             return True
     return False
+
+
+def is_bad_sentiment(sentiment):
+    return any(sentiment[x] > 0.5 for x in ['angry', 'fearful'])

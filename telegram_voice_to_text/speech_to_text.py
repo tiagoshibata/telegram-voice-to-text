@@ -8,13 +8,12 @@ from google.api_core.exceptions import InvalidArgument
 import scipy.io.wavfile
 
 from .config import project_root
+from .state import get_state
 
 vokaturi_directory = project_root() / 'deps/Vokaturi'
 sys.path.append(str(vokaturi_directory / 'api'))
 import Vokaturi
 Vokaturi.load(str(vokaturi_directory / 'OpenVokaturi-3-0-linux64.so'))
-
-lang = 'en-US'
 
 language_codes = {
     'english': 'en-US',
@@ -26,11 +25,11 @@ languages = {
     'pt-BR': 'Agora a o bot está em português',
 }
 
-def switch_language(language):
-    global lang
-    language_code = language_codes.get(language, language)
+def switch_language(new_language):
+    state = get_state()
+    language_code = language_codes.get(new_language, new_language)
     if language_code in languages:
-        lang = language_code
+        state.language = language_code
         return languages[language_code]
     return 'Invalid language code. '
 
@@ -41,7 +40,7 @@ def process_speech_text(speech_raw, sample_rate):
     config = types.RecognitionConfig(
         encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=sample_rate,
-        language_code=lang)
+        language_code=get_state().language)
 
     # Detects speech in the audio file
     response = client.recognize(config, audio)
@@ -98,9 +97,10 @@ def classify(text, verbose=True):
 
     language_client = language.LanguageServiceClient()
 
-    document = language.types.Document(
+    document = types.Document(
         content=text,
-        type=language.enums.Document.Type.PLAIN_TEXT)
+        type=language.enums.Document.Type.PLAIN_TEXT,
+        language=get_state().language)
     try:
         response = language_client.classify_text(document)
     except Exception as e:
@@ -118,7 +118,8 @@ def binary_sentiment(text, verbose=True):
     # The text to analyze
     document = types.Document(
         content=text,
-        type=enums.Document.Type.PLAIN_TEXT)
+        type=enums.Document.Type.PLAIN_TEXT,
+        language=get_state().language)
 
     # Detects the sentiment of the text
     sentiment = client.analyze_sentiment(document=document).document_sentiment
@@ -156,7 +157,7 @@ def process_speech(speech_file):
         audio_sentiment=audio_sentiment,
         categories=text_categories,
         text_sentiment=text_sentiment,
-        blacklist=is_in_blacklist(text) or is_bad_sentiment(audio_sentiment) or is_desired_category(text_categories, []),
+        blacklist=is_in_blacklist(text) or is_bad_sentiment(audio_sentiment) or is_desired_category(text_categories),
     )
 
 
@@ -183,5 +184,5 @@ def is_bad_sentiment(sentiment):
     return any(sentiment[x] > 0.5 for x in ['angry', 'fearful'])
 
 
-def is_desired_category(text_categories, desired_categories):
-    return any(text_categories.get(x, 0) > 0.5 for x in desired_categories)
+def is_desired_category(text_categories):
+    return any(text_categories.get(x, 0) > 0.5 for x in get_state().filters.text_categories)

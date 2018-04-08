@@ -156,7 +156,7 @@ def process_speech(speech_file):
         audio_sentiment=audio_sentiment,
         categories=text_categories,
         text_sentiment=text_sentiment,
-        blacklist=is_in_blacklist(text) or is_bad_sentiment(audio_sentiment),
+        blacklist=is_in_blacklist(text) or is_bad_sentiment(audio_sentiment) or is_desired_category(text_categories, []),
     )
 
 
@@ -181,3 +181,7 @@ def is_in_blacklist (text):
 
 def is_bad_sentiment(sentiment):
     return any(sentiment[x] > 0.5 for x in ['angry', 'fearful'])
+
+
+def is_desired_category(text_categories, desired_categories):
+    return any(text_categories.get(x, 0) > 0.5 for x in desired_categories)

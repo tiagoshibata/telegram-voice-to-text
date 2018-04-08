@@ -40,20 +40,27 @@ def voice_handler(bot, update):
         data.download(custom_path=str(custom_path))
         result = process_speech(custom_path)
 
-    if result.text_sentiment < -0.25:
-        emoji = '🙁'
-    elif result.text_sentiment < 0.25:
-        emoji = '😐'
-    else:
-        emoji = '🙂'
-    update.message.reply_markdown('Speaker in {} mood \nOrientation:{} \
-                                  \nRelated categories are {} \n*{}*\n{}'.format(
-                                      result.audio_sentiment,
-                                      emoji,
-                                      ', '.join(result.categories.keys()),
-                                      user,
-                                      result.text))
 
+    reply = []
+    if result.audio_sentiment:
+        sentiments = sorted(
+            {key: value for key, value in result.audio_sentiment.values() if value > 0.3},
+            key=lambda x: result.audio_sentiment[x])
+        reply.append("Speaker's voice is {}".format(' and '.join(sentiments)))
+    if result.text_sentiment:
+        if result.text_sentiment < -0.25:
+            emoji = '🙁'
+        elif result.text_sentiment < 0.25:
+            emoji = '😐'
+        else:
+            emoji = '🙂'
+        reply.append('Text mood: {}'.format(emoji))
+    if result.categories:
+        reply.append('Related categories: {}'.format(', '.join(result.categories.keys())))
+
+    update.message.reply_markdown('. '.join(reply) + '.\n*{}*\n{}'.format(
+        user, result.text
+    ))
     private_message_if_emergency(bot, update, result.text, categories=result.categories)
 
 

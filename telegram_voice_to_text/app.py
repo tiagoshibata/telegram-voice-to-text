@@ -6,6 +6,8 @@ import sys
 import tempfile
 
 import telegram_voice_to_text.config as config
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 from telegram_voice_to_text.speech_to_text import process_speech, switch_language
@@ -29,8 +31,19 @@ def command_handler(bot, update):
             reply = switch_language(words[0])
         update.message.reply_text(reply)
 
+    def topic_selection_handler(words):
+        keyboard = [[InlineKeyboardButton("Option 1", callback_data='1'),
+                     InlineKeyboardButton("Option 2", callback_data='2')],
+
+                    [InlineKeyboardButton("Option 3", callback_data='3')]]
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        update.message.reply_text('Please choose:', reply_markup=reply_markup)
+
     handlers = [
         (('lang', 'language'), language_handler),
+        (('topics', 'select topics'), topic_selection_handler)
     ]
 
     words = update.message.text.split()

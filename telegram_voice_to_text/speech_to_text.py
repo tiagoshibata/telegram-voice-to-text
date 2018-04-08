@@ -1,10 +1,19 @@
 from collections import namedtuple
+from pathlib import Path
+import sys
 
 from google.cloud import language
 from google.cloud.language import enums
 from google.cloud.language import types
 from google.api_core.exceptions import InvalidArgument
 import scipy.io.wavfile
+
+from telegram_voice_to_text.config import project_root
+
+vokaturi_directory = project_root() / 'deps/Vokaturi'
+sys.path.append(str(vokaturi_directory / 'api'))
+import Vokaturi
+Vokaturi.load(str(vokaturi_directory / 'OpenVokaturi-3-0-linux64.so'))
 
 lang = 'en-US'
 

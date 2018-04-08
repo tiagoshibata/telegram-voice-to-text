@@ -40,7 +40,7 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=['google-cloud', 'pytesseract', 'python-telegram-bot', 'scipy'],
+    install_requires=['clarifai', 'google-cloud', 'pytesseract', 'python-telegram-bot', 'scipy'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,

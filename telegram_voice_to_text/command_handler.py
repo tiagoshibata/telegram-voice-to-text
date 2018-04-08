@@ -14,23 +14,6 @@ def command_handler(bot, update):
         update.message.reply_text(reply)
 
     def topic_selection_handler(words):
-        get_state().filters.enable_get_categories = True
-        get_state().filters.text_categories = []
-
-        categorie = [cat for cat in CATEGORIES]
-
-        keyboard = [InlineKeyboardButton(x, callback_data=x) for x in categorie]
-
-        keyboard = [keyboard[x:x + 4] for x in range(0, len(keyboard), 4)]
-
-        keyboard += [[InlineKeyboardButton("OK", callback_data="OK")]]
-
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        update.message.reply_text('Please choose the topics you have interest and press ok:',
-                                  reply_markup=reply_markup)
-
-    def categories_handler(words):
         if words:
             if all(x in CATEGORIES for x in words):
                 get_state().filters.text_categories = words
@@ -38,12 +21,18 @@ def command_handler(bot, update):
             else:
                 reply = 'Invalid category found. Valid categories are: {}'.format(', '.join(CATEGORIES))
         else:
-            pass  # TODO show inline options
+            get_state().filters.enable_get_categories = True
+            get_state().filters.text_categories = []
+            keyboard = [InlineKeyboardButton(x, callback_data=x) for x in CATEGORIES]
+            keyboard = [keyboard[x:x + 4] for x in range(0, len(keyboard), 4)]
+            keyboard += [[InlineKeyboardButton("OK", callback_data="OK")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            update.message.reply_text('Please choose the topics you have interest and press ok:',
+                                    reply_markup=reply_markup)
 
     handlers = [
         (('lang', 'language'), language_handler),
-        (('topics', 'topic'), topic_selection_handler),
-        ('categories', categories_handler),
+        (('categories', 'topics', 'topic'), topic_selection_handler),
     ]
 
     words = update.message.text.split()

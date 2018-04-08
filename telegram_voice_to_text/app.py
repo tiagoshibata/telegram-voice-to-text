@@ -44,10 +44,10 @@ def voice_handler(bot, update):
     reply = []
     if result.audio_sentiment:
         print(result.audio_sentiment)
-        sentiments = sorted(
-            {key: value for key, value in result.audio_sentiment.items() if value > 0.3},
+        sentiment = max(
+            result.audio_sentiment.keys(),
             key=lambda x: result.audio_sentiment[x])
-        reply.append("Speaker's voice is {}".format(' and '.join(sentiments)))
+        reply.append("Speaker's voice is {}".format(sentiment))
     if result.text_sentiment:
         if result.text_sentiment < -0.25:
             emoji = '🙁'

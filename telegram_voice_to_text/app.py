@@ -47,7 +47,8 @@ def voice_handler(bot, update):
     else:
         emoji = 'U+1F641'
     update.message.reply_text('Speaker in {} mood \nOrientation:{} \
-                              \nRelated categories are {} \nspeech from {}\n{}'.format(result.audio_sentiment, emoji, result.categories.keys(), user, result.text))
+                              \nRelated categories are {} \nspeech from {} \
+                              \n{}'.format(result.audio_sentiment[0], emoji, result.categories.keys(), user, result.text))
 
     private_message_if_emergency(bot, update, result.text, categories=result.categories)
 

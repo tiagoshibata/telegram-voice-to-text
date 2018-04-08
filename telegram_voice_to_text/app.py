@@ -7,7 +7,7 @@ import tempfile
 
 import telegram_voice_to_text.config as config
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-
+from telegram import ReplyKeyboardMarkup
 from telegram_voice_to_text.speech_to_text import process_speech, switch_language
 
 
@@ -55,10 +55,33 @@ def voice_handler(bot, update):
     user = '{} {}'.format(from_user['first_name'], from_user['last_name'])
     update.message.reply_text('{}, {}, {} speech from {}: {}'.format(result.audio_sentiment, result.text_sentiment, result.categories, user, result.text))
 
+    if emotion_filter:
+        print('emotion filter on')
+        if  result.audio_sentiment in emotions:
+            print('fear or anger detected!')
+    else:
+        print('emotion filter off')
+
+
+emotions = ['fearful, angry']
+
 
 def text_handler(bot, update):
     if update.message.text == "oi":
         update.effective_user.send_message(text="oiii")
+    if update.message.text == "emotion":
+        chat_id = update.message.chat_id
+        custom_keyboard = [['ON', 'OFF']]
+        reply_markup = ReplyKeyboardMarkup(custom_keyboard, one_time_keyboard=True)
+        bot.send_message(chat_id=chat_id,
+                      text="Turn emotion filter on?",
+                      reply_markup=reply_markup)
+    if update.message.text == "ON":
+        emotion_filter = True
+        update.effective_user.send_message(text="Emotion filter ON!")
+    if update.message.text == "OFF":
+        emotion_filter = False
+        update.effective_user.send_message(text="Emotion filter OFF!")
 
 
 def error(bot, update, error):

@@ -1,8 +1,27 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from telegram_voice_to_text.speech_to_text import process_speech, switch_language
+from telegram_voice_to_text.speech_to_text import process_speech
 from telegram_voice_to_text.state import get_state
 from telegram_voice_to_text.categories import CATEGORIES
+
+language_codes = {
+    'english': 'en-US',
+    'português': 'pt-BR',
+}
+
+languages = {
+    'en-US': 'Language set to English!',
+    'pt-BR': 'Português selecionado!',
+}
+
+
+def switch_language(new_language):
+    state = get_state()
+    language_code = language_codes.get(new_language, new_language)
+    if language_code in languages:
+        state.language = language_code
+        return languages[language_code]
+    return 'Invalid language code. '
 
 
 def command_handler(bot, update):

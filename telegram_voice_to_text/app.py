@@ -44,7 +44,7 @@ def voice_handler(bot, update):
     reply = []
     if result.audio_sentiment:
         sentiments = sorted(
-            {key: value for key, value in result.audio_sentiment.values() if value > 0.3},
+            {key: value for key, value in result.audio_sentiment.items() if value > 0.3},
             key=lambda x: result.audio_sentiment[x])
         reply.append("Speaker's voice is {}".format(' and '.join(sentiments)))
     if result.text_sentiment:
@@ -59,7 +59,7 @@ def voice_handler(bot, update):
         reply.append('Related categories: {}'.format(', '.join(result.categories.keys())))
 
     update.message.reply_markdown('. '.join(reply) + '.\n*{}*\n{}'.format(
-        user, result.text
+        user, result.text or '_No text detected_'
     ))
     private_message_if_emergency(bot, update, result.text, categories=result.categories)
 

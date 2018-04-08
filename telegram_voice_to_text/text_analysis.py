@@ -5,7 +5,9 @@ from .state import get_state
 
 def classify(text, verbose=True):
     """Classify the input text into categories."""
-
+    text = _preprocess_text(text)
+    if not text:
+        return
     language_client = LanguageServiceClient()
 
     document = types.Document(
@@ -44,7 +46,7 @@ def binary_sentiment(text, verbose=True):
 def _preprocess_text(raw_text):
     words = len(raw_text.split(sep=' '))
     if words < 10:
-         return raw_text
+         return None
     if words < 20:
         extended_text = raw_text + ' ' + raw_text
         return extended_text
@@ -52,7 +54,6 @@ def _preprocess_text(raw_text):
 
 
 def process_text(text):
-    text = _preprocess_text(text)
     bin_score = binary_sentiment(text)
     categories_dict = classify(text)
     return bin_score, categories_dict

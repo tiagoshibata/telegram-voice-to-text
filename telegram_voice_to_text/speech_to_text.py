@@ -130,7 +130,7 @@ def binary_sentiment(text, verbose=True):
     return sentiment.score
 
 SpeechResults = namedtuple('SpeechResults', ['text', 'audio_sentiment', 'categories',
-                           'text_sentiment', 'blacklist'])
+                           'text_sentiment', 'relevant'])
 
 
 def process_text(text):
@@ -152,12 +152,17 @@ def process_speech(speech_file):
     text = preprocess_text(text)
     text_sentiment, text_categories = process_text(text)
     audio_sentiment = get_sentiment(sample_rate, samples)
+    relevant = True
+    if get_state().filters.speech_sentiments_enabled:
+        relevant = is_important_sentiment(audio_sentiment)
+    if is_emergency_text(text) or is_desired_category(text_categories):
+        relevant = True
     return SpeechResults(
         text=text,
         audio_sentiment=audio_sentiment,
         categories=text_categories,
         text_sentiment=text_sentiment,
-        blacklist=is_in_blacklist(text) or is_bad_sentiment(audio_sentiment) or is_desired_category(text_categories),
+        relevant=relevant,
     )
 
 
@@ -173,14 +178,11 @@ def preprocess_text(raw_text):
 blacklist = ['fogo', 'emergencia', 'emergência', 'tiro', 'policia', 'morte',
             'incêndio', 'socorro', '911', 'emergency', 'fire', 'urgent']
 
-def is_in_blacklist (text):
-    for word in blacklist:
-        if word in text:
-            return True
-    return False
+def is_emergency_text(text):
+    return any(word in text for word in blacklist)
 
 
-def is_bad_sentiment(sentiment):
+def is_important_sentiment(sentiment):
     return any(sentiment[x] > 0.5 for x in ['angry', 'fearful'])
 
 

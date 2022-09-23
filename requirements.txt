@@ -14,7 +14,7 @@ idna==2.7
 jsonschema==2.6.0
 numpy==1.15.0
 Pillow==6.2.0
-protobuf==3.6.1
+protobuf==3.18.3
 pyasn1==0.4.4
 pyasn1-modules==0.2.2
 pytesseract==0.2.4
